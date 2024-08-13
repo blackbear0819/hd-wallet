@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-// import "../styles/Home.css";
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 // import axios from 'axios';
@@ -14,7 +13,6 @@ import { FaSortDown, FaPlus } from "react-icons/fa6";
 import { FaSignOutAlt } from "react-icons/fa"
 import Spinner from 'react-bootstrap/Spinner';
 
-
 const Home = () => {
   const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   // const [ data, setData ] = useState({});
@@ -22,6 +20,7 @@ const Home = () => {
   const [show, setShow] = useState(false);
   const [accountShow, setAccountShow] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -47,8 +46,6 @@ const Home = () => {
   //   }
   // }
 
-
-
   useEffect(() => {
     // fetchLuckyNumber();
     if (token === "") {
@@ -57,9 +54,12 @@ const Home = () => {
     }
   }, [token]);
 
-  // useEffect(() => {
-  //   console.log(isCreateAccount);
-  // }, [isCreateAccount]);
+  useEffect(() => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
   return (
     <>
@@ -67,7 +67,7 @@ const Home = () => {
         <Container className='my-2'>
           <Navbar.Brand className='w-25'>
             <Button variant='dark' onClick={handleShow} className='d-flex'>
-              <span>Ethereum Mainest</span>
+              <span>Ethereum Mainnet</span>
               <FaSortDown />
             </Button>
           </Navbar.Brand>
@@ -104,11 +104,15 @@ const Home = () => {
         </Container>
       </Navbar>
       <Container>
-        <h1 className='text-center my-5 display-3 text-secondary'>$123456789</h1>
-        <div className='d-flex align-items-center justify-content-center'>
-          <Spinner animation="border" role="status" variant='secondary'></Spinner>
-          <h5 className='text-secondary m-2 display-6'>Calculating...</h5>
-        </div>
+        {!isLoading ?
+          <h1 className='text-center my-5 display-3 text-secondary'>$123456789</h1>
+          :
+          <div className='d-flex align-items-center justify-content-center my-5'>
+            <Spinner animation="border" role="status" variant='secondary'></Spinner>
+            <h5 className='text-secondary m-2 display-6'>Calculating...</h5>
+          </div>
+
+        }
       </Container>
 
       {/* Ethereum Mainest Modal */}
@@ -119,7 +123,7 @@ const Home = () => {
         <Modal.Body>
           <div className='d-flex flex-column'>
             <Button variant='dark' className='mb-1'>Ethereum Mainnet</Button>
-            <Button variant='dark'>Linea Mainnet</Button>
+            <Button variant='dark'>Bitcoin Mainnet</Button>
           </div>
         </Modal.Body>
         <Modal.Footer className='d-flex justify-content-center'>
@@ -171,11 +175,11 @@ const Home = () => {
             </Modal.Body>
           </>}
         <Modal.Footer>
-          {isCreateAccount ? 
-          <>
-            <button className='btn btn-secondary'>Cancel</button>
-            <button className='btn btn-dark'>Create</button>
-          </> :
+          {isCreateAccount ?
+            <>
+              <button className='btn btn-secondary' onClick={() => setIsCreateAccount(false)}>Cancel</button>
+              <button className='btn btn-dark'>Create</button>
+            </> :
             <Button variant="dark" onClick={() => setIsCreateAccount(true)} className='d-flex align-items-center w-100 justify-content-center'>
               <FaPlus className='me-1' />
               <span>Add account or hardware wallet</span>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "../assets/image.png";
-import Logo from "../assets/logo.png";
-import GoogleSvg from "../assets/icons8-google.svg";
+// import Logo from "../assets/logo.png";
+// import GoogleSvg from "../assets/icons8-google.svg";
 import { FaEye, FaEyeSlash } from "react-icons/fa6";
 import "../styles/Login.css";
 import { Link, useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { baseUrl } from "../service/consts";
 import { FaSignInAlt } from "react-icons/fa";
+import Form from "react-bootstrap/Form";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -85,7 +86,7 @@ const Login = () => {
 
               <div className="login-center-options">
                 <div className="remember-div">
-                  <input type="checkbox" id="remember-checkbox" />
+                  <Form.Check type='switch' />
                   <label htmlFor="remember-checkbox">Remember for 30 days</label>
                 </div>
                 {/* <a href="#" className="forgot-pass-link">

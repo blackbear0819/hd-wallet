@@ -21,18 +21,22 @@ const Home = () => {
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [accountShow, setAccountShow] = useState(false);
+  const [isCreateAccount, setIsCreateAccount] = useState(false);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
   const handleCloseAccount = () => setAccountShow(false);
-  const handleShowAccount = () => setAccountShow(true);
+  const handleShowAccount = () => {
+    setAccountShow(true);
+    setIsCreateAccount(false);
+  };
 
   // const fetchLuckyNumber = async () => {
 
   //   let axiosConfig = {
   //     headers: {
   //       'Authorization': `Bearer ${token}`
-  //   }
+  //     }
   //   };
 
   //   try {
@@ -53,17 +57,21 @@ const Home = () => {
     }
   }, [token]);
 
+  // useEffect(() => {
+  //   console.log(isCreateAccount);
+  // }, [isCreateAccount]);
+
   return (
     <>
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
-          <Navbar.Brand>
+          <Navbar.Brand className='w-25'>
             <Button variant='dark' onClick={handleShow} className='d-flex'>
               <span>Ethereum Mainest</span>
               <FaSortDown />
             </Button>
           </Navbar.Brand>
-          <Navbar.Brand>
+          <Navbar.Brand className='w-25'>
             <div className='d-flex flex-column'>
               <div className='d-flex justify-content-center'>
                 <Button variant='dark' onClick={handleShowAccount} className='d-flex'>
@@ -75,8 +83,8 @@ const Home = () => {
             </div>
           </Navbar.Brand>
           {/* <Navbar.Toggle aria-controls="basic-navbar-nav" /> */}
-          <div>
-            <Navbar.Collapse id="basic-navbar-nav">
+          <div className='w-25'>
+            <Navbar.Collapse id="basic-navbar-nav" className='justify-content-end'>
               <Nav>
                 <NavDropdown title="More" id="basic-nav-dropdown">
                   <NavDropdown.Item>Notifications</NavDropdown.Item>
@@ -104,19 +112,21 @@ const Home = () => {
       </Container>
 
       {/* Ethereum Mainest Modal */}
-      <Modal show={show} onHide={handleClose} size='sm'>
+      <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
           <Modal.Title>Select a network</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Button variant='link' className='text-decoration-none text-dark'>Ethereum Mainnet</Button>
-          <Button variant='link' className='text-decoration-none text-dark'>Linea Mainnet</Button>
+          <div className='d-flex flex-column'>
+            <Button variant='dark' className='mb-1'>Ethereum Mainnet</Button>
+            <Button variant='dark'>Linea Mainnet</Button>
+          </div>
         </Modal.Body>
         <Modal.Footer className='d-flex justify-content-center'>
           {/* <Button variant="secondary" onClick={handleClose}>
             Close
           </Button> */}
-          <Button variant="dark" onClick={handleClose} className='d-flex align-items-center'>
+          <Button variant="dark" onClick={handleClose} className='d-flex align-items-center w-100 justify-content-center'>
             <FaPlus className='me-1' />
             <span>Add network</span>
           </Button>
@@ -124,22 +134,52 @@ const Home = () => {
       </Modal>
 
       {/* Account Modal */}
-      <Modal show={accountShow} onHide={handleCloseAccount} size='sm'>
+      <Modal show={accountShow} onHide={handleCloseAccount}>
         <Modal.Header closeButton>
-          <Modal.Title>Select an account</Modal.Title>
+          <Modal.Title>{isCreateAccount ? 'Add account' : 'Select an account'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Button variant='link' className='text-decoration-none text-dark'>Account1</Button>
-          {/* <Button variant='link' className='text-decoration-none text-dark'>Linea Mainnet</Button> */}
-        </Modal.Body>
-        <Modal.Footer className='px-0 d-flex justify-content-center'>
-          {/* <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button> */}
-          <Button variant="dark" onClick={handleCloseAccount} className='d-flex align-items-center'>
-            <FaPlus />
-            <span className='small'>Add account or hardware wallet</span>
-          </Button>
+        {isCreateAccount ?
+          <Modal.Body>
+            <p className='mb-0'>Account name</p>
+            <input type="text" className='form-control' />
+          </Modal.Body>
+
+          : <>
+            <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}>
+              <div className='d-flex justify-content-between'>
+                <div>
+                  <h5 className='mb-0'>Account1</h5>
+                  <p className='mb-0'>0xe8889...62BA2</p>
+                </div>
+                <div>
+                  <p className='text-end mb-0'>USD</p>
+                  <p className='text-end mb-0'>2ETH</p>
+                </div>
+              </div>
+            </Modal.Body>
+            <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}>
+              <div className='d-flex justify-content-between'>
+                <div>
+                  <h5 className='mb-0'>Account2</h5>
+                  <p className='mb-0'>0xe8889...62BA2</p>
+                </div>
+                <div>
+                  <p className='text-end mb-0'>USD</p>
+                  <p className='text-end mb-0'>1ETH</p>
+                </div>
+              </div>
+            </Modal.Body>
+          </>}
+        <Modal.Footer>
+          {isCreateAccount ? 
+          <>
+            <button className='btn btn-secondary'>Cancel</button>
+            <button className='btn btn-dark'>Create</button>
+          </> :
+            <Button variant="dark" onClick={() => setIsCreateAccount(true)} className='d-flex align-items-center w-100 justify-content-center'>
+              <FaPlus className='me-1' />
+              <span>Add account or hardware wallet</span>
+            </Button>}
         </Modal.Footer>
       </Modal>
     </>

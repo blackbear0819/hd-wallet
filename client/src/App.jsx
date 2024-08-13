@@ -4,8 +4,6 @@ import { Home, HomeLayout, Landing, Login, Logout, Register } from "./pages";
 import { ToastContainer, toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-
-
 const router = createBrowserRouter([
   {
     path: "/",

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-// import axios from 'axios';
-// import { baseUrl } from '../service/consts';
+import axios from 'axios';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Nav from 'react-bootstrap/Nav';
@@ -10,44 +9,30 @@ import Navbar from 'react-bootstrap/Navbar';
 import NavDropdown from 'react-bootstrap/NavDropdown';
 import Container from 'react-bootstrap/Container';
 import { FaSortDown, FaPlus } from "react-icons/fa6";
-import { FaSignOutAlt } from "react-icons/fa"
+import { FaSignOutAlt } from "react-icons/fa";
 import Spinner from 'react-bootstrap/Spinner';
+import { baseUrl } from '../service/consts';
 
 const Home = () => {
   const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
-  // const [ data, setData ] = useState({});
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [accountShow, setAccountShow] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [account, setAccount] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
+  const [accounts, setAccounts] = useState([]);
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
-  const handleCloseAccount = () => setAccountShow(false);
-  const handleShowAccount = () => {
+  const handleClose = useCallback(() => setShow(false), []);
+  const handleShow = useCallback(() => setShow(true), []);
+  const handleCloseAccount = useCallback(() => setAccountShow(false), []);
+  const handleShowAccount = useCallback(() => {
     setAccountShow(true);
     setIsCreateAccount(false);
-  };
-
-  // const fetchLuckyNumber = async () => {
-
-  //   let axiosConfig = {
-  //     headers: {
-  //       'Authorization': `Bearer ${token}`
-  //     }
-  //   };
-
-  //   try {
-  //     const response = await axios.get(`${baseUrl}/dashboard`, axiosConfig);
-  //     setData({ msg: response.data.msg, luckyNumber: response.data.secret });
-  //   } catch (error) {
-  //     toast.error(error.message);
-  //   }
-  // }
+  }, []);
 
   useEffect(() => {
-    // fetchLuckyNumber();
     if (token === "") {
       navigate("/login");
       toast.warn("Please login first to access dashboard");
@@ -59,19 +44,57 @@ const Home = () => {
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
+    loadAccounts();
   }, []);
+
+  // useEffect(() => {
+  //   console.log(accounts);
+  // }, [accounts]);
+
+  const loadAccounts = useCallback(async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/accounts`);
+      setAccounts(response.data.accounts);
+    } catch (error) {
+      toast.error(error.response.data.msg);
+    }
+  }, []);
+
+  const createAccount = useCallback(async () => {
+    if (!account) {
+      toast.warning('Account field is required!');
+      return;
+    }
+    if (!privateKey) {
+      toast.warning('Private key field is required!');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${baseUrl}/account`, {
+        account: account,
+        privateKey: privateKey
+      });
+      toast.success(response.data.msg);
+      setIsCreateAccount(false);
+      loadAccounts();
+    } catch (error) {
+      toast.error(error.response.data.msg);
+    }
+
+  }, [account, privateKey]);
 
   return (
     <>
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
-          <Navbar.Brand className='w-25'>
+          <Navbar.Brand style={{ width: '15%' }}>
             <Button variant='dark' onClick={handleShow} className='d-flex'>
               <span>Ethereum Mainnet</span>
               <FaSortDown />
             </Button>
           </Navbar.Brand>
-          <Navbar.Brand className='w-25'>
+          <Navbar.Brand style={{ width: '15%' }}>
             <div className='d-flex flex-column'>
               <div className='d-flex justify-content-center'>
                 <Button variant='dark' onClick={handleShowAccount} className='d-flex'>
@@ -83,7 +106,7 @@ const Home = () => {
             </div>
           </Navbar.Brand>
           {/* <Navbar.Toggle aria-controls="basic-navbar-nav" /> */}
-          <div className='w-25'>
+          <div style={{ width: '15%' }}>
             <Navbar.Collapse id="basic-navbar-nav" className='justify-content-end'>
               <Nav>
                 <NavDropdown title="More" id="basic-nav-dropdown">
@@ -111,7 +134,6 @@ const Home = () => {
             <Spinner animation="border" role="status" variant='secondary'></Spinner>
             <h5 className='text-secondary m-2 display-6'>Calculating...</h5>
           </div>
-
         }
       </Container>
 
@@ -142,43 +164,36 @@ const Home = () => {
         <Modal.Header closeButton>
           <Modal.Title>{isCreateAccount ? 'Add account' : 'Select an account'}</Modal.Title>
         </Modal.Header>
-        {isCreateAccount ?
-          <Modal.Body>
+        {isCreateAccount
+          ? <Modal.Body>
             <p className='mb-0'>Account name</p>
-            <input type="text" className='form-control' />
+            <input type="text" className='form-control' placeholder='Enter your new account.'
+              onChange={e => setAccount(e.target.value)} />
+            <p className='mb-0 mt-3'>Private key</p>
+            <input type="text" className='form-control' placeholder='Enter your private key. ex: 0x12345abcdef67890'
+              onChange={e => setPrivateKey(e.target.value)} />
           </Modal.Body>
-
           : <>
-            <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}>
-              <div className='d-flex justify-content-between'>
-                <div>
-                  <h5 className='mb-0'>Account1</h5>
-                  <p className='mb-0'>0xe8889...62BA2</p>
+            {accounts.map((item, index) =>
+              <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }} key={index}>
+                <div className='d-flex justify-content-between'>
+                  <div>
+                    <h5 className='mb-0'>{item.name}</h5>
+                    <p className='mb-0 w-50 text-truncate'>{item.publicKey}</p>
+                  </div>
+                  <div>
+                    <p className='text-end mb-0'>USD</p>
+                    <p className='text-end mb-0'>2ETH</p>
+                  </div>
                 </div>
-                <div>
-                  <p className='text-end mb-0'>USD</p>
-                  <p className='text-end mb-0'>2ETH</p>
-                </div>
-              </div>
-            </Modal.Body>
-            <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}>
-              <div className='d-flex justify-content-between'>
-                <div>
-                  <h5 className='mb-0'>Account2</h5>
-                  <p className='mb-0'>0xe8889...62BA2</p>
-                </div>
-                <div>
-                  <p className='text-end mb-0'>USD</p>
-                  <p className='text-end mb-0'>1ETH</p>
-                </div>
-              </div>
-            </Modal.Body>
-          </>}
+              </Modal.Body>)}
+          </>
+        }
         <Modal.Footer>
           {isCreateAccount ?
             <>
               <button className='btn btn-secondary' onClick={() => setIsCreateAccount(false)}>Cancel</button>
-              <button className='btn btn-dark'>Create</button>
+              <button className='btn btn-dark' onClick={createAccount}>Create</button>
             </> :
             <Button variant="dark" onClick={() => setIsCreateAccount(true)} className='d-flex align-items-center w-100 justify-content-center'>
               <FaPlus className='me-1' />
@@ -187,11 +202,6 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
     </>
-    // <div className='dashboard-main'>
-    //   <h1>Dashboard</h1>
-    //   {/* <p>Hi { data.msg }! { data.luckyNumber }</p> */}
-    //   <Link to="/logout" className="logout-button">Logout</Link>
-    // </div>
   )
 }
 

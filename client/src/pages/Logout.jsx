@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 
@@ -6,6 +7,7 @@ const Logout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    delete axios.defaults.headers.common['Authorization'];
     localStorage.removeItem("auth");
     setTimeout(() => {
       navigate("/");

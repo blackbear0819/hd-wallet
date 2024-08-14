@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Account = require("../models/Account");
+const { ethers } = require("ethers");
 
 const login = async (req, res) => {
   const { username, password } = req.body;
@@ -19,7 +21,7 @@ const login = async (req, res) => {
         { id: foundUser._id, username: foundUser.username },
         process.env.JWT_SECRET,
         {
-          expiresIn: "30d",
+          expiresIn: 60 * 60 * 24 * 30,
         }
       );
 
@@ -30,15 +32,6 @@ const login = async (req, res) => {
   } else {
     return res.status(400).json({ msg: "Bad credentails" });
   }
-};
-
-const dashboard = async (req, res) => {
-  const luckyNumber = Math.floor(Math.random() * 100);
-
-  res.status(200).json({
-    msg: `Hello, ${req.user.username}`,
-    secret: `Here is your authorized data, your lucky number is ${luckyNumber}`,
-  });
 };
 
 const getAllUsers = async (req, res) => {
@@ -59,17 +52,45 @@ const register = async (req, res) => {
       });
       await person.save();
       return res.status(201).json({ person });
-    }else{
-        return res.status(400).json({msg: "Please add all values in the request body"});
+    } else {
+      return res.status(400).json({ msg: "Please add all values in the request body" });
     }
   } else {
     return res.status(400).json({ msg: "Username already in use" });
   }
 };
 
+const createAccount = async (req, res) => {
+  const { account, privateKey } = req.body;
+  try {
+    // Create a Wallet instance using the private key
+    const wallet = new ethers.Wallet(privateKey);
+    // Get the public key
+    const publicKey = wallet.address;
+    try {
+      await Account.create({ name: account, publicKey: publicKey });
+      res.status(201).json({ msg: 'Your new account has been successfully created!' });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  } catch (error) {
+    res.status(400).json({ msg: error.message });
+  }
+}
+
+const loadAccounts = async (req, res) => {
+  try {
+    const accounts = await Account.find();
+    res.status(200).json({ accounts: accounts });
+  } catch (error) {
+    res.status(400).json({ msg: error.message });
+  }
+}
+
 module.exports = {
   login,
   register,
-  dashboard,
   getAllUsers,
+  createAccount,
+  loadAccounts
 };

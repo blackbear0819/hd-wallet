@@ -4,9 +4,8 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
-import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
+import Dropdown from 'react-bootstrap/Dropdown';
 import Container from 'react-bootstrap/Container';
 import { FaSortDown, FaPlus } from "react-icons/fa6";
 import { FaSignOutAlt } from "react-icons/fa";
@@ -14,8 +13,8 @@ import Spinner from 'react-bootstrap/Spinner';
 import { baseUrl } from '../service/consts';
 
 const Home = () => {
-  const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   const navigate = useNavigate();
+  const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
   const [show, setShow] = useState(false);
   const [accountShow, setAccountShow] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
@@ -38,7 +37,6 @@ const Home = () => {
       toast.warn("Please login first to access dashboard");
     }
   }, [token]);
-
   useEffect(() => {
     setIsLoading(true);
     setTimeout(() => {
@@ -46,10 +44,6 @@ const Home = () => {
     }, 1000);
     loadAccounts();
   }, []);
-
-  // useEffect(() => {
-  //   console.log(accounts);
-  // }, [accounts]);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -81,20 +75,19 @@ const Home = () => {
     } catch (error) {
       toast.error(error.response.data.msg);
     }
-
   }, [account, privateKey]);
 
   return (
     <>
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
-          <Navbar.Brand style={{ width: '15%' }}>
+          <Navbar.Brand className='w-25'>
             <Button variant='dark' onClick={handleShow} className='d-flex'>
               <span>Ethereum Mainnet</span>
               <FaSortDown />
             </Button>
           </Navbar.Brand>
-          <Navbar.Brand style={{ width: '15%' }}>
+          <Navbar.Brand className='w-25'>
             <div className='d-flex flex-column'>
               <div className='d-flex justify-content-center'>
                 <Button variant='dark' onClick={handleShowAccount} className='d-flex'>
@@ -105,24 +98,22 @@ const Home = () => {
               {/* <p className='mb-0'>0xe8889...62BA2</p> */}
             </div>
           </Navbar.Brand>
-          {/* <Navbar.Toggle aria-controls="basic-navbar-nav" /> */}
-          <div style={{ width: '15%' }}>
-            <Navbar.Collapse id="basic-navbar-nav" className='justify-content-end'>
-              <Nav>
-                <NavDropdown title="More" id="basic-nav-dropdown">
-                  <NavDropdown.Item>Notifications</NavDropdown.Item>
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item>Account details</NavDropdown.Item>
-                  <NavDropdown.Item>View on explorer</NavDropdown.Item>
-                  <NavDropdown.Divider />
-                  <NavDropdown.Item>All Permissions</NavDropdown.Item>
-                  <NavDropdown.Item>Snaps</NavDropdown.Item>
-                  <NavDropdown.Item>Support</NavDropdown.Item>
-                  <NavDropdown.Item>Settings</NavDropdown.Item>
-                  <NavDropdown.Item href='/logout'><FaSignOutAlt /> Log out</NavDropdown.Item>
-                </NavDropdown>
-              </Nav>
-            </Navbar.Collapse>
+          <div className='w-25 d-flex justify-content-end me-5'>
+            <Dropdown data-bs-theme="dark">
+              <Dropdown.Toggle id="dropdown-button-dark-example1" variant="dark">More</Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item>Notifications</Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item>Account details</Dropdown.Item>
+                <Dropdown.Item>View on explorer</Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item>All Permissions</Dropdown.Item>
+                <Dropdown.Item>Snaps</Dropdown.Item>
+                <Dropdown.Item>Support</Dropdown.Item>
+                <Dropdown.Item>Settings</Dropdown.Item>
+                <Dropdown.Item href='/logout'><FaSignOutAlt /> Log out</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
           </div>
         </Container>
       </Navbar>
@@ -170,7 +161,7 @@ const Home = () => {
             <input type="text" className='form-control' placeholder='Enter your new account.'
               onChange={e => setAccount(e.target.value)} />
             <p className='mb-0 mt-3'>Private key</p>
-            <input type="text" className='form-control' placeholder='Enter your private key. ex: 0x12345abcdef67890'
+            <input type="text" className='form-control' placeholder='Enter your private key. ex: 0x12345abcdef67890...'
               onChange={e => setPrivateKey(e.target.value)} />
           </Modal.Body>
           : <>

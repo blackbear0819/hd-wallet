@@ -71,9 +71,15 @@ const createAccount = async (req, res) => {
       await Account.create({ name: account, publicKey: publicKey });
       res.status(201).json({ msg: 'Your new account has been successfully created!' });
     } catch (error) {
-      res.status(400).json({ message: error.message });
+      if (error.message.includes('duplicate key error')) {
+        return res.status(400).send({ msg: `The account "${account}" is already in use.` });
+      }
+      res.status(400).json({ msg: error.message });
     }
   } catch (error) {
+    if (error.message.includes('invalid private key')) {
+      return res.status(400).send({ msg: `The private key "${privateKey}" is invalid.` });
+    }
     res.status(400).json({ msg: error.message });
   }
 }

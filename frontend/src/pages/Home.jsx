@@ -25,6 +25,12 @@ const Home = () => {
   const [accounts, setAccounts] = useState([]);
   const [account, setAccount] = useState({});
   const [isShowSendingModal, setIsShowSendingModal] = useState(false);
+  const [sendingData, setSendingData] = useState({
+    fromAccount: '',
+    toAccount: '',
+    token: '',
+    amount: 0
+  });
 
   const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
   const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
@@ -82,6 +88,16 @@ const Home = () => {
       toast.error(error.response.data.msg);
     }
   }, [accountName, privateKey]);
+
+  const sendToken = useCallback(() => {
+    for (const key in sendingData) {
+      if (sendingData[key] === '' || sendingData[key] === 0) {
+        toast.warning(`${key.charAt(0).toUpperCase()}${key.slice(1)} field is required!`);
+        return;
+      }
+    }
+    setIsShowSendingModal(false);
+  }, [sendingData]);
 
   return (
     <>
@@ -150,35 +166,38 @@ const Home = () => {
         </Modal.Header>
         <Modal.Body>
           <FloatingLabel controlId="from" label="From" className='mb-3'>
-            <Form.Select aria-label="from">
-              <option>Select a account</option>
-              {accounts.map((item, index) => 
+            <Form.Select aria-label="from" value={sendingData.fromAccount}
+              onChange={e => setSendingData({ ...sendingData, fromAccount: e.target.value })}>
+              <option value=''>Select a account</option>
+              {accounts.map((item, index) =>
                 <option value={item._id} key={index}>{item.name}</option>
               )}
             </Form.Select>
           </FloatingLabel>
           <FloatingLabel controlId="to" label="To" className='mb-3'>
-            <Form.Select aria-label="to">
-              <option>Select a account</option>
-              {accounts.map((item, index) => 
+            <Form.Select aria-label="to" value={sendingData.toAccount}
+              onChange={e => setSendingData({ ...sendingData, toAccount: e.target.value })}>
+              <option value=''>Select a account</option>
+              {accounts.map((item, index) =>
                 <option value={item._id} key={index}>{item.name}</option>
               )}
             </Form.Select>
           </FloatingLabel>
           <FloatingLabel controlId="token" label="Token" className='mb-3'>
-            <Form.Select aria-label="token">
-              <option>Select asset to send</option>
-              <option>Bitcoin</option>
-              <option>Ethereum</option>
+            <Form.Select aria-label="token" value={sendingData.token}
+              onChange={e => setSendingData({ ...sendingData, token: e.target.value })}>
+              <option value="">Select asset to send</option>
+              <option value="token1">token1</option>
+              <option value="token2">token2</option>
             </Form.Select>
           </FloatingLabel>
           <FloatingLabel controlId="amount" label="Amount">
-            <Form.Control type="number" min="0" />
+            <Form.Control type="number" min="0" value={sendingData.amount}
+              onChange={e => setSendingData({ ...sendingData, amount: e.target.value })} />
           </FloatingLabel>
         </Modal.Body>
         <Modal.Footer>
-          {/* <Button variant="secondary" onClick={closeSendingModal}>Close</Button> */}
-          <Button variant="dark" className='w-100'><FaPaperPlane /> Send</Button>
+          <Button variant="dark" className='w-100' onClick={sendToken}><FaPaperPlane /> Send</Button>
         </Modal.Footer>
       </Modal>
 

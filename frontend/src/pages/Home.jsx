@@ -5,31 +5,36 @@ import axios from 'axios';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Navbar from 'react-bootstrap/Navbar';
-import Dropdown from 'react-bootstrap/Dropdown';
 import Container from 'react-bootstrap/Container';
-import { FaSortDown, FaPlus } from "react-icons/fa6";
+import { FaSortDown, FaPlus, FaPaperPlane } from "react-icons/fa6";
 import { FaSignOutAlt } from "react-icons/fa";
 import Spinner from 'react-bootstrap/Spinner';
 import { baseUrl } from '../service/consts';
+import FloatingLabel from 'react-bootstrap/FloatingLabel';
+import Form from 'react-bootstrap/Form';
 
 const Home = () => {
   const navigate = useNavigate();
   const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
-  const [show, setShow] = useState(false);
-  const [accountShow, setAccountShow] = useState(false);
+  const [isShowNetworkModal, setIsShowNetworkModal] = useState(false);
+  const [isShowAccountModal, setIsShowAccountModal] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [account, setAccount] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [accounts, setAccounts] = useState([]);
+  const [account, setAccount] = useState({});
+  const [isShowSendingModal, setIsShowSendingModal] = useState(false);
 
-  const handleClose = useCallback(() => setShow(false), []);
-  const handleShow = useCallback(() => setShow(true), []);
-  const handleCloseAccount = useCallback(() => setAccountShow(false), []);
-  const handleShowAccount = useCallback(() => {
-    setAccountShow(true);
+  const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
+  const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
+  const closeAccountModal = useCallback(() => setIsShowAccountModal(false), []);
+  const showAccountModal = useCallback(() => {
+    setIsShowAccountModal(true);
     setIsCreateAccount(false);
   }, []);
+  const showSendingModal = useCallback(() => setIsShowSendingModal(true));
+  const closeSendingModal = useCallback(() => setIsShowSendingModal(false));
 
   useEffect(() => {
     if (token === "") {
@@ -49,13 +54,14 @@ const Home = () => {
     try {
       const response = await axios.get(`${baseUrl}/accounts`);
       setAccounts(response.data.accounts);
+      if (response.data.accounts.length) setAccount(response.data.accounts[0]);
     } catch (error) {
       toast.error(error.response.data.msg);
     }
   }, []);
 
   const createAccount = useCallback(async () => {
-    if (!account) {
+    if (!accountName) {
       toast.warning('Account field is required!');
       return;
     }
@@ -66,7 +72,7 @@ const Home = () => {
 
     try {
       const response = await axios.post(`${baseUrl}/account`, {
-        account: account,
+        account: accountName,
         privateKey: privateKey
       });
       toast.success(response.data.msg);
@@ -75,30 +81,36 @@ const Home = () => {
     } catch (error) {
       toast.error(error.response.data.msg);
     }
-  }, [account, privateKey]);
+  }, [accountName, privateKey]);
 
   return (
     <>
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
           <Navbar.Brand className='w-25'>
-            <Button variant='dark' onClick={handleShow} className='d-flex'>
+            <Button variant='dark' onClick={showNetworkModal} className='d-flex'>
               <span>Ethereum Mainnet</span>
               <FaSortDown />
             </Button>
           </Navbar.Brand>
-          <Navbar.Brand className='w-25'>
+          <Navbar.Brand>
             <div className='d-flex flex-column'>
               <div className='d-flex justify-content-center'>
-                <Button variant='dark' onClick={handleShowAccount} className='d-flex'>
-                  <span>Account</span>
+                <Button variant='dark' onClick={showAccountModal} className='d-flex'>
+                  <span>{Object.keys(account).length ? account.name : 'No account'}</span>
                   <FaSortDown />
                 </Button>
               </div>
-              {/* <p className='mb-0'>0xe8889...62BA2</p> */}
+              <p className='mb-0 text-center'>{Object.keys(account).length ? account.publicKey?.slice(0, 6) + '...' + account.publicKey?.slice(-5) : ''}</p>
             </div>
           </Navbar.Brand>
-          <div className='w-25 d-flex justify-content-end me-5'>
+          <div className='w-25 d-flex justify-content-end'>
+            <Link to='/logout' variant='dark' className='btn btn-dark'>
+              <span className='me-2'>Logout</span>
+              <FaSignOutAlt />
+            </Link>
+          </div>
+          {/* <div className='w-25 d-flex justify-content-end me-5'>
             <Dropdown data-bs-theme="dark">
               <Dropdown.Toggle id="dropdown-button-dark-example1" variant="dark">More</Dropdown.Toggle>
               <Dropdown.Menu>
@@ -114,7 +126,7 @@ const Home = () => {
                 <Dropdown.Item href='/logout'><FaSignOutAlt /> Log out</Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
-          </div>
+          </div> */}
         </Container>
       </Navbar>
       <Container>
@@ -126,10 +138,52 @@ const Home = () => {
             <h5 className='text-secondary m-2 display-6'>Calculating...</h5>
           </div>
         }
+        <div className='d-flex justify-content-center'>
+          <Button variant='dark' onClick={showSendingModal}><FaPaperPlane /> Send</Button>
+        </div>
       </Container>
 
-      {/* Ethereum Mainest Modal */}
-      <Modal show={show} onHide={handleClose}>
+      {/* Sending Modal */}
+      <Modal show={isShowSendingModal} onHide={closeSendingModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Send a token</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <FloatingLabel controlId="from" label="From" className='mb-3'>
+            <Form.Select aria-label="from">
+              <option>Select a account</option>
+              {accounts.map((item, index) => 
+                <option value={item._id} key={index}>{item.name}</option>
+              )}
+            </Form.Select>
+          </FloatingLabel>
+          <FloatingLabel controlId="to" label="To" className='mb-3'>
+            <Form.Select aria-label="to">
+              <option>Select a account</option>
+              {accounts.map((item, index) => 
+                <option value={item._id} key={index}>{item.name}</option>
+              )}
+            </Form.Select>
+          </FloatingLabel>
+          <FloatingLabel controlId="token" label="Token" className='mb-3'>
+            <Form.Select aria-label="token">
+              <option>Select asset to send</option>
+              <option>Bitcoin</option>
+              <option>Ethereum</option>
+            </Form.Select>
+          </FloatingLabel>
+          <FloatingLabel controlId="amount" label="Amount">
+            <Form.Control type="number" min="0" />
+          </FloatingLabel>
+        </Modal.Body>
+        <Modal.Footer>
+          {/* <Button variant="secondary" onClick={closeSendingModal}>Close</Button> */}
+          <Button variant="dark" className='w-100'><FaPaperPlane /> Send</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Network Modal */}
+      <Modal show={isShowNetworkModal} onHide={closeNetworkModal}>
         <Modal.Header closeButton>
           <Modal.Title>Select a network</Modal.Title>
         </Modal.Header>
@@ -140,10 +194,10 @@ const Home = () => {
           </div>
         </Modal.Body>
         <Modal.Footer className='d-flex justify-content-center'>
-          {/* <Button variant="secondary" onClick={handleClose}>
+          {/* <Button variant="secondary" onClick={closeNetworkModal}>
             Close
           </Button> */}
-          <Button variant="dark" onClick={handleClose} className='d-flex align-items-center w-100 justify-content-center'>
+          <Button variant="dark" onClick={closeNetworkModal} className='d-flex align-items-center w-100 justify-content-center'>
             <FaPlus className='me-1' />
             <span>Add network</span>
           </Button>
@@ -151,7 +205,7 @@ const Home = () => {
       </Modal>
 
       {/* Account Modal */}
-      <Modal show={accountShow} onHide={handleCloseAccount}>
+      <Modal show={isShowAccountModal} onHide={closeAccountModal}>
         <Modal.Header closeButton>
           <Modal.Title>{isCreateAccount ? 'Add account' : 'Select an account'}</Modal.Title>
         </Modal.Header>
@@ -159,18 +213,19 @@ const Home = () => {
           ? <Modal.Body>
             <p className='mb-0'>Account name</p>
             <input type="text" className='form-control' placeholder='Enter your new account.'
-              onChange={e => setAccount(e.target.value)} />
+              onChange={e => setAccountName(e.target.value)} />
             <p className='mb-0 mt-3'>Private key</p>
             <input type="text" className='form-control' placeholder='Enter your private key. ex: 0x12345abcdef67890...'
               onChange={e => setPrivateKey(e.target.value)} />
           </Modal.Body>
           : <>
             {accounts.map((item, index) =>
-              <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }} key={index}>
+              <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}
+                key={index} onClick={() => { setAccount(item); closeAccountModal(); }}>
                 <div className='d-flex justify-content-between'>
                   <div>
                     <h5 className='mb-0'>{item.name}</h5>
-                    <p className='mb-0 w-50 text-truncate'>{item.publicKey}</p>
+                    <p className='mb-0'>{`${item.publicKey?.slice(0, 8)}...${item.publicKey?.slice(-5)}`}</p>
                   </div>
                   <div>
                     <p className='text-end mb-0'>USD</p>
@@ -186,7 +241,8 @@ const Home = () => {
               <button className='btn btn-secondary' onClick={() => setIsCreateAccount(false)}>Cancel</button>
               <button className='btn btn-dark' onClick={createAccount}>Create</button>
             </> :
-            <Button variant="dark" onClick={() => setIsCreateAccount(true)} className='d-flex align-items-center w-100 justify-content-center'>
+            <Button variant="dark" onClick={() => { setIsCreateAccount(true); setAccountName(''); setPrivateKey(''); }}
+              className='d-flex align-items-center w-100 justify-content-center'>
               <FaPlus className='me-1' />
               <span>Add account or hardware wallet</span>
             </Button>}

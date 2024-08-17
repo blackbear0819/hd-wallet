@@ -35,9 +35,11 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const token = JSON.parse(localStorage.auth);
-  axios.defaults.baseURL = 'http://localhost:3000';
-  axios.defaults.headers.common['authorization'] = `Bearer ${token}`;
+  if (localStorage.auth !== undefined) {
+    const token = JSON.parse(localStorage.auth);
+    axios.defaults.baseURL = 'http://localhost:3000';
+    axios.defaults.headers.common['authorization'] = `Bearer ${token}`;
+  }
 
   return (
     <>

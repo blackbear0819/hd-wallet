@@ -7,7 +7,7 @@ import Modal from 'react-bootstrap/Modal';
 import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
 import { FaSortDown, FaPlus, FaPaperPlane } from "react-icons/fa6";
-import { FaSignOutAlt } from "react-icons/fa";
+import { FaSignOutAlt, FaSpinner } from "react-icons/fa";
 import Spinner from 'react-bootstrap/Spinner';
 import { baseUrl } from '../service/consts';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
@@ -31,6 +31,7 @@ const Home = () => {
     token: '',
     amount: 0
   });
+  const [isSending, setIsSending] = useState(false);
 
   const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
   const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
@@ -77,6 +78,7 @@ const Home = () => {
     }
 
     try {
+      setIsSending(true);
       const response = await axios.post(`${baseUrl}/account`, {
         account: accountName,
         privateKey: privateKey
@@ -89,12 +91,23 @@ const Home = () => {
     }
   }, [accountName, privateKey]);
 
-  const sendToken = useCallback(() => {
+  const sendToken = useCallback(async () => {
     for (const key in sendingData) {
       if (sendingData[key] === '' || sendingData[key] === 0) {
         toast.warning(`${key.charAt(0).toUpperCase()}${key.slice(1)} field is required!`);
         return;
       }
+    }
+    try {
+      setIsSending(true);
+      const response = await axios.post(`${baseUrl}/send-transaction`, sendingData);
+      console.log(response);
+      setIsSending(false);
+      toast.success('OK!');
+    } catch (error) {
+      setIsSending(false);
+      const msg = error.response.data.shortMessage;
+      toast.error(`${msg.charAt(0).toUpperCase()}${msg.slice(1)}`);
     }
     setIsShowSendingModal(false);
   }, [sendingData]);
@@ -147,7 +160,10 @@ const Home = () => {
       </Navbar>
       <Container>
         {!isLoading ?
-          <h1 className='text-center my-5 display-3 text-secondary'>$123456789</h1>
+          <>
+            <h1 className='text-center mt-5 display-3 text-secondary'>0.02 ETH</h1>
+            <h3 className='text-center mb-5 text-secondary'>$123456789 USD</h3>
+          </>
           :
           <div className='d-flex align-items-center justify-content-center my-5'>
             <Spinner animation="border" role="status" variant='secondary'></Spinner>
@@ -170,7 +186,7 @@ const Home = () => {
               onChange={e => setSendingData({ ...sendingData, fromAccount: e.target.value })}>
               <option value=''>Select a account</option>
               {accounts.map((item, index) =>
-                <option value={item._id} key={index}>{item.name}</option>
+                <option value={item.privateKey} key={index}>{item.publicKey.slice(0, 8) + '...' + item.publicKey.slice(-5)}</option>
               )}
             </Form.Select>
           </FloatingLabel>
@@ -179,7 +195,7 @@ const Home = () => {
               onChange={e => setSendingData({ ...sendingData, toAccount: e.target.value })}>
               <option value=''>Select a account</option>
               {accounts.map((item, index) =>
-                <option value={item._id} key={index}>{item.name}</option>
+                <option value={item.publicKey} key={index}>{item.publicKey.slice(0, 8) + '...' + item.publicKey.slice(-5)}</option>
               )}
             </Form.Select>
           </FloatingLabel>
@@ -197,7 +213,9 @@ const Home = () => {
           </FloatingLabel>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="dark" className='w-100' onClick={sendToken}><FaPaperPlane /> Send</Button>
+          <Button variant="dark" className='w-100' onClick={sendToken}>
+            {isSending ? <FaSpinner icon="spinner" className="spinner" /> : <FaPaperPlane />} Send
+          </Button>
         </Modal.Footer>
       </Modal>
 
@@ -239,7 +257,7 @@ const Home = () => {
           </Modal.Body>
           : <>
             {accounts.map((item, index) =>
-              <Modal.Body className='border-bottom' style={{ cursor: 'pointer' }}
+              <Modal.Body className={'border-bottom ' + (account.name === item.name ? 'bg-light' : '')} style={{ cursor: 'pointer' }}
                 key={index} onClick={() => { setAccount(item); closeAccountModal(); }}>
                 <div className='d-flex justify-content-between'>
                   <div>
@@ -247,7 +265,7 @@ const Home = () => {
                     <p className='mb-0'>{`${item.publicKey?.slice(0, 8)}...${item.publicKey?.slice(-5)}`}</p>
                   </div>
                   <div>
-                    <p className='text-end mb-0'>USD</p>
+                    <p className='text-end mb-0'>$2679.57USD</p>
                     <p className='text-end mb-0'>2ETH</p>
                   </div>
                 </div>

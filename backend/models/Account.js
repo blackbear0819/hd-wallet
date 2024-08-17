@@ -5,12 +5,19 @@ const AccountSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Name field is required!'],
     minlength: 3,
-    maxlength: 50
+    maxlength: 50,
+    unique: true
   },
   publicKey: {
     type: String,
-    required: [true, 'public key field is required!'],
+    required: [true, 'Public key field is required!'],
+    unique: true
   },
+  privateKey: {
+    type: String,
+    required: [true, 'Private key field is required!'],
+    unique:true
+  }
 }, {
   timestamps: true
 });

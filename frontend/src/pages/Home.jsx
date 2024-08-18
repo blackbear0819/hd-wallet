@@ -19,7 +19,6 @@ const Home = () => {
   const [isShowNetworkModal, setIsShowNetworkModal] = useState(false);
   const [isShowAccountModal, setIsShowAccountModal] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [accountName, setAccountName] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [accounts, setAccounts] = useState([]);
@@ -32,6 +31,9 @@ const Home = () => {
     amount: 0
   });
   const [isSending, setIsSending] = useState(false);
+  const [balance, setBalance] = useState('0.0');
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [usd, setUsd] = useState(0);
 
   const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
   const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
@@ -50,10 +52,6 @@ const Home = () => {
     }
   }, [token]);
   useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
     loadAccounts();
   }, []);
 
@@ -106,11 +104,27 @@ const Home = () => {
       toast.success('OK!');
     } catch (error) {
       setIsSending(false);
-      const msg = error.response.data.shortMessage;
+      const msg = error.response.data.reason;
       toast.error(`${msg.charAt(0).toUpperCase()}${msg.slice(1)}`);
     }
     setIsShowSendingModal(false);
   }, [sendingData]);
+
+  const selectAccount = useCallback(async (account) => {
+    setAccount(account);
+    closeAccountModal();
+    try {
+      setIsLoadingBalance(true);
+      const response = await axios.post(`${baseUrl}/balance`, { address: account.publicKey });
+      setBalance(response.data.balance);
+      setUsd(response.data.usd);
+      setIsLoadingBalance(false);
+    } catch (error) {
+      console.log(error);
+      setBalance('0.0');
+      setIsLoadingBalance(false);
+    }
+  }, []);
 
   return (
     <>
@@ -159,10 +173,10 @@ const Home = () => {
         </Container>
       </Navbar>
       <Container>
-        {!isLoading ?
+        {!isLoadingBalance ?
           <>
-            <h1 className='text-center mt-5 display-3 text-secondary'>0.02 ETH</h1>
-            <h3 className='text-center mb-5 text-secondary'>$123456789 USD</h3>
+            <h1 className='text-center mt-5 display-3 text-secondary'>{balance} ETH</h1>
+            <h3 className='text-center mb-5 text-secondary'>${usd} USD</h3>
           </>
           :
           <div className='d-flex align-items-center justify-content-center my-5'>
@@ -257,17 +271,17 @@ const Home = () => {
           </Modal.Body>
           : <>
             {accounts.map((item, index) =>
-              <Modal.Body className={'border-bottom ' + (account.name === item.name ? 'bg-light' : '')} style={{ cursor: 'pointer' }}
-                key={index} onClick={() => { setAccount(item); closeAccountModal(); }}>
+              <Modal.Body className={'border-bottom ' + (account.name === item.name ? 'bg-light' : '')}
+                style={{ cursor: 'pointer' }} key={index} onClick={() => selectAccount(item)}>
                 <div className='d-flex justify-content-between'>
                   <div>
                     <h5 className='mb-0'>{item.name}</h5>
                     <p className='mb-0'>{`${item.publicKey?.slice(0, 8)}...${item.publicKey?.slice(-5)}`}</p>
                   </div>
-                  <div>
+                  {/* <div>
                     <p className='text-end mb-0'>$2679.57USD</p>
                     <p className='text-end mb-0'>2ETH</p>
-                  </div>
+                  </div> */}
                 </div>
               </Modal.Body>)}
           </>

@@ -103,20 +103,17 @@ const loadAccounts = async (req, res) => {
 
 const sendTransaction = async (req, res) => {
   const { fromAccount, toAccount, amount } = req.body;
-  // Replace with your own values
-  const senderPrivateKey = fromAccount;
-  const recipientAddress = toAccount;
   const providerUrl = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`; // Use your own provider
   try {
     // Connect to an Ethereum provider
     const provider = new ethers.providers.JsonRpcProvider(providerUrl);
     // Create a wallet instance
-    const wallet = new ethers.Wallet(senderPrivateKey, provider);
+    const wallet = new ethers.Wallet(fromAccount, provider);
     // Get the current nonce for the wallet
     const nonce = await wallet.getTransactionCount();
     // Create the transaction
     const tx = {
-      to: recipientAddress,
+      to: toAccount,
       value: ethers.utils.parseEther(amount), // Amount in Ether
       nonce: nonce,
       gasLimit: 21000, // Gas limit

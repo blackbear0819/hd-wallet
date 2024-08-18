@@ -54,6 +54,19 @@ const Home = () => {
   useEffect(() => {
     loadAccounts();
   }, []);
+  useEffect(() => {
+    setIsLoadingBalance(true);
+    axios.post(`${baseUrl}/balance`, {
+      address: account.publicKey
+    }).then(response => {
+      setBalance(response.data.balance);
+      setUsd(response.data.usd);
+      setIsLoadingBalance(false);
+    }).catch(error => {
+      setBalance('0.0');
+      setIsLoadingBalance(false);
+    });
+  }, [account]);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -76,7 +89,7 @@ const Home = () => {
     }
 
     try {
-      setIsSending(true);
+      setIsCreateAccount(true);
       const response = await axios.post(`${baseUrl}/account`, {
         account: accountName,
         privateKey: privateKey
@@ -86,6 +99,7 @@ const Home = () => {
       loadAccounts();
     } catch (error) {
       toast.error(error.response.data.msg);
+      setIsCreateAccount(false);
     }
   }, [accountName, privateKey]);
 
@@ -113,17 +127,6 @@ const Home = () => {
   const selectAccount = useCallback(async (account) => {
     setAccount(account);
     closeAccountModal();
-    try {
-      setIsLoadingBalance(true);
-      const response = await axios.post(`${baseUrl}/balance`, { address: account.publicKey });
-      setBalance(response.data.balance);
-      setUsd(response.data.usd);
-      setIsLoadingBalance(false);
-    } catch (error) {
-      console.log(error);
-      setBalance('0.0');
-      setIsLoadingBalance(false);
-    }
   }, []);
 
   return (
@@ -153,43 +156,29 @@ const Home = () => {
               <FaSignOutAlt />
             </Link>
           </div>
-          {/* <div className='w-25 d-flex justify-content-end me-5'>
-            <Dropdown data-bs-theme="dark">
-              <Dropdown.Toggle id="dropdown-button-dark-example1" variant="dark">More</Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item>Notifications</Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item>Account details</Dropdown.Item>
-                <Dropdown.Item>View on explorer</Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item>All Permissions</Dropdown.Item>
-                <Dropdown.Item>Snaps</Dropdown.Item>
-                <Dropdown.Item>Support</Dropdown.Item>
-                <Dropdown.Item>Settings</Dropdown.Item>
-                <Dropdown.Item href='/logout'><FaSignOutAlt /> Log out</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </div> */}
         </Container>
       </Navbar>
       <Container>
         {!isLoadingBalance ?
-          <>
-            <h1 className='text-center mt-5 display-3 text-secondary'>{balance} ETH</h1>
-            <h3 className='text-center mb-5 text-secondary'>${usd} USD</h3>
-          </>
-          :
-          <div className='d-flex align-items-center justify-content-center my-5'>
+          (Object.keys(account).length
+            ? <>
+              <h1 className='text-center mt-5 display-3 text-secondary'>{balance} ETH</h1>
+              <h3 className='text-center mb-5 text-secondary'>${usd} USD</h3>
+            </>
+            : <h1 className='text-center mt-5 display-3 text-secondary'>No account selected!</h1>
+          )
+          : <div className='d-flex align-items-center justify-content-center my-5'>
             <Spinner animation="border" role="status" variant='secondary'></Spinner>
             <h5 className='text-secondary m-2 display-6'>Calculating...</h5>
           </div>
         }
-        <div className='d-flex justify-content-center'>
-          <Button variant='dark' onClick={showSendingModal}><FaPaperPlane /> Send</Button>
-        </div>
+        {Object.keys(account).length !== 0 &&
+          <div className='d-flex justify-content-center'>
+            <Button variant='dark' onClick={showSendingModal}><FaPaperPlane /> Send</Button>
+          </div>
+        }
       </Container>
 
-      {/* Sending Modal */}
       <Modal show={isShowSendingModal} onHide={closeSendingModal}>
         <Modal.Header closeButton>
           <Modal.Title>Send a token</Modal.Title>
@@ -233,7 +222,6 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Network Modal */}
       <Modal show={isShowNetworkModal} onHide={closeNetworkModal}>
         <Modal.Header closeButton>
           <Modal.Title>Select a network</Modal.Title>
@@ -255,7 +243,6 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Account Modal */}
       <Modal show={isShowAccountModal} onHide={closeAccountModal}>
         <Modal.Header closeButton>
           <Modal.Title>{isCreateAccount ? 'Add account' : 'Select an account'}</Modal.Title>

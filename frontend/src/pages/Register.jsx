@@ -38,7 +38,11 @@ const Login = () => {
         };
         try {
           const response = await axios.post(`${baseUrl}/register`, formData);
+          console.log(response);
           toast.success("Registration successfull!");
+          toast.info(`Your seed phrase is "${response.data.person.seedPhrase}"`, {
+            autoClose: 15000
+          });
           navigate("/login");
         } catch (err) {
           toast.error(err.message);

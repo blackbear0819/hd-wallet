@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Account = require("../models/Account");
-const { ethers, parseUnits } = require("ethers");
+const { ethers, Wallet } = require("ethers");
 const axios = require('axios');
 
 const login = async (req, res) => {
@@ -46,10 +46,13 @@ const register = async (req, res) => {
   if (foundUser === null) {
     let { username, password } = req.body;
     if (username.length && password.length) {
+      const wallet = ethers.Wallet.createRandom();
       const person = new User({
         username: username,
-        // email: email,
         password: password,
+        seedPhrase: wallet.mnemonic.phrase,
+        address: wallet.address,
+        privateKey: wallet.privateKey
       });
       await person.save();
       return res.status(201).json({ person });
@@ -63,6 +66,7 @@ const register = async (req, res) => {
 
 const createAccount = async (req, res) => {
   const { account, privateKey } = req.body;
+  const { id } = req.user;
   // private key example : 0x4c0883a69102937d6238479f8b59b3a2a3f254dcb3c0b1c3e8c25b279d9f7c74
   try {
     // Create a Wallet instance using the private key
@@ -76,7 +80,7 @@ const createAccount = async (req, res) => {
       }
     }
     try {
-      await Account.create({ name: account, publicKey: publicKey, privateKey: privateKey });
+      await Account.create({ name: account, publicKey, privateKey, userId: id });
       res.status(201).json({ msg: 'Your new account has been successfully created!' });
     } catch (error) {
       if (error.message.includes('duplicate key error')) {
@@ -93,9 +97,10 @@ const createAccount = async (req, res) => {
 }
 
 const loadAccounts = async (req, res) => {
+  const { id, username } = req.user;
   try {
-    const accounts = await Account.find();
-    res.status(200).json({ accounts: accounts });
+    const accounts = await Account.find({ userId: id });
+    res.status(200).json({ accounts: accounts, username });
   } catch (error) {
     res.status(400).json({ msg: error.message });
   }
@@ -137,9 +142,34 @@ const checkBalance = async (req, res) => {
     const balanceInEth = ethers.utils.formatEther(balance);
     const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
     const price = response.data.ethereum.usd;
-    res.status(200).json({ balance: balanceInEth, usd: price * parseFloat(balanceInEth) });
+    res.status(200).json({
+      balance: balanceInEth,
+      usd: price * parseFloat(balanceInEth)
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Unable to fetch balance' });
+    res.status(500).json(error);
+  }
+}
+
+const restoreWallet = async (req, res) => {
+  const { seedPhrase } = req.body;
+  // const seedPhrase = 'beach mind mix fury key gallery ill elite spin gold betray trouble';
+
+  try {
+    // Create a wallet from the seed phrase
+    const wallet = Wallet.fromMnemonic(seedPhrase);
+    const publicKey = (await User.findById(req.user.id)).address;
+    // You can retrieve wallet address for further actions
+    const address = wallet.address;
+    if (publicKey === address) {
+      // Here you can also fetch the user's balance from a node or check against your database  
+      return res.status(200).json({ message: "Wallet Restored", address });
+    } else {
+      return res.status(400).json({ message: "The seed phrase is incorrect!" });
+    }
+
+  } catch (error) {
+    res.status(400).json({ message: "Failed to restore wallet" });
   }
 }
 
@@ -150,5 +180,6 @@ module.exports = {
   createAccount,
   loadAccounts,
   sendTransaction,
-  checkBalance
+  checkBalance,
+  restoreWallet
 };

@@ -32,8 +32,9 @@ const Login = () => {
           formData
         );
         localStorage.setItem('auth', JSON.stringify(response.data.token));
+        axios.defaults.headers.common['authorization'] = `Bearer ${response.data.token}`;
         toast.success("Login successfull");
-        navigate("/home");
+        navigate("/restore");
       } catch (err) {
         toast.error(err.message);
       }

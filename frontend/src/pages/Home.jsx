@@ -7,7 +7,7 @@ import Modal from 'react-bootstrap/Modal';
 import Navbar from 'react-bootstrap/Navbar';
 import Container from 'react-bootstrap/Container';
 import { FaSortDown, FaPlus, FaPaperPlane } from "react-icons/fa6";
-import { FaSignOutAlt, FaSpinner } from "react-icons/fa";
+import { FaSignOutAlt, FaSpinner, FaKey } from "react-icons/fa";
 import Spinner from 'react-bootstrap/Spinner';
 import { baseUrl } from '../service/consts';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
@@ -16,8 +16,9 @@ import Form from 'react-bootstrap/Form';
 const Home = () => {
   const navigate = useNavigate();
   const [token, setToken] = useState(JSON.parse(localStorage.getItem("auth")) || "");
-  const [isShowNetworkModal, setIsShowNetworkModal] = useState(false);
+  // const [isShowNetworkModal, setIsShowNetworkModal] = useState(false);
   const [isShowAccountModal, setIsShowAccountModal] = useState(false);
+  const [isShowPrivateKeyModal, setIsShowPrivateKeyModal] = useState(false);
   const [isCreateAccount, setIsCreateAccount] = useState(false);
   const [accountName, setAccountName] = useState('');
   const [privateKey, setPrivateKey] = useState('');
@@ -34,9 +35,12 @@ const Home = () => {
   const [balance, setBalance] = useState('0.0');
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [usd, setUsd] = useState(0);
+  const [username, setUsername] = useState("");
+  const [key, setKey] = useState("");
 
-  const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
-  const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
+  // const closeNetworkModal = useCallback(() => setIsShowNetworkModal(false), []);
+  // const showNetworkModal = useCallback(() => setIsShowNetworkModal(true), []);
+  const closePrivateKeyModal = useCallback(() => setIsShowPrivateKeyModal(false), []);
   const closeAccountModal = useCallback(() => setIsShowAccountModal(false), []);
   const showAccountModal = useCallback(() => {
     setIsShowAccountModal(true);
@@ -72,6 +76,7 @@ const Home = () => {
     try {
       const response = await axios.get(`${baseUrl}/accounts`);
       setAccounts(response.data.accounts);
+      setUsername(response.data.username);
       if (response.data.accounts.length) setAccount(response.data.accounts[0]);
     } catch (error) {
       toast.error(error.response.data.msg);
@@ -99,7 +104,6 @@ const Home = () => {
       loadAccounts();
     } catch (error) {
       toast.error(error.response.data.msg);
-      setIsCreateAccount(false);
     }
   }, [accountName, privateKey]);
 
@@ -115,7 +119,7 @@ const Home = () => {
       const response = await axios.post(`${baseUrl}/send-transaction`, sendingData);
       console.log(response);
       setIsSending(false);
-      toast.success('OK!');
+      toast.success('Success!');
     } catch (error) {
       setIsSending(false);
       const msg = error.response.data.reason;
@@ -129,15 +133,24 @@ const Home = () => {
     closeAccountModal();
   }, []);
 
+  const showPrivateKey = useCallback((key) => {
+    setIsShowAccountModal(false);
+    setIsShowPrivateKeyModal(true);
+    setKey(key);
+  }, []);
+
   return (
     <>
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
           <Navbar.Brand className='w-25'>
-            <Button variant='dark' onClick={showNetworkModal} className='d-flex'>
+            {/* <Button variant='dark' onClick={showNetworkModal} className='d-flex'>
               <span>Ethereum Mainnet</span>
               <FaSortDown />
-            </Button>
+            </Button> */}
+            <Link to={'#'} className='text-decoration-none'>
+              <h1 className='my-0'>HD Wallet</h1>
+            </Link>
           </Navbar.Brand>
           <Navbar.Brand>
             <div className='d-flex flex-column'>
@@ -150,7 +163,8 @@ const Home = () => {
               <p className='mb-0 text-center'>{Object.keys(account).length ? account.publicKey?.slice(0, 6) + '...' + account.publicKey?.slice(-5) : ''}</p>
             </div>
           </Navbar.Brand>
-          <div className='w-25 d-flex justify-content-end'>
+          <div className='w-25 d-flex justify-content-end align-items-center'>
+            <h5 className='my-0 text-white me-2'>{username}</h5>
             <Link to='/logout' variant='dark' className='btn btn-dark'>
               <span className='me-2'>Logout</span>
               <FaSignOutAlt />
@@ -222,7 +236,7 @@ const Home = () => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={isShowNetworkModal} onHide={closeNetworkModal}>
+      {/* <Modal show={isShowNetworkModal} onHide={closeNetworkModal}>
         <Modal.Header closeButton>
           <Modal.Title>Select a network</Modal.Title>
         </Modal.Header>
@@ -233,13 +247,21 @@ const Home = () => {
           </div>
         </Modal.Body>
         <Modal.Footer className='d-flex justify-content-center'>
-          {/* <Button variant="secondary" onClick={closeNetworkModal}>
-            Close
-          </Button> */}
           <Button variant="dark" onClick={closeNetworkModal} className='d-flex align-items-center w-100 justify-content-center'>
             <FaPlus className='me-1' />
             <span>Add network</span>
           </Button>
+        </Modal.Footer>
+      </Modal> */}
+      <Modal show={isShowPrivateKeyModal} onHide={closePrivateKeyModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Private key</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <h5 style={{wordBreak: 'break-all'}} className='my-2 text-center'>{key}</h5>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="dark" onClick={closePrivateKeyModal}>Close</Button>
         </Modal.Footer>
       </Modal>
 
@@ -265,6 +287,8 @@ const Home = () => {
                     <h5 className='mb-0'>{item.name}</h5>
                     <p className='mb-0'>{`${item.publicKey?.slice(0, 8)}...${item.publicKey?.slice(-5)}`}</p>
                   </div>
+                  <Button variant='dark' size='sm' className='my-2'
+                    onClick={() => showPrivateKey(item.privateKey)}><FaKey /></Button>
                   {/* <div>
                     <p className='text-end mb-0'>$2679.57USD</p>
                     <p className='text-end mb-0'>2ETH</p>

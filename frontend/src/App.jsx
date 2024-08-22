@@ -4,6 +4,7 @@ import { Home, HomeLayout, Landing, Login, Logout, Register } from "./pages";
 import { ToastContainer, toast } from 'react-toastify';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from "axios";
+import RestoreWallet from "./pages/RestoreWallet";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: "logout",
         element: <Logout />,
+      },
+      {
+        path: "restore",
+        element: <RestoreWallet />,
       }
     ],
   },
@@ -44,7 +49,10 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
-      <ToastContainer position='top-center' />
+      <ToastContainer
+        position='top-right'
+        theme="colored"
+      />
     </>
   )
 }

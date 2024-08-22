@@ -7,7 +7,7 @@ const Logout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    delete axios.defaults.headers.common['Authorization'];
+    delete axios.defaults.headers.common['authorization'];
     localStorage.removeItem("auth");
     setTimeout(() => {
       navigate("/");

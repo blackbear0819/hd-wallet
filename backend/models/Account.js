@@ -17,6 +17,11 @@ const AccountSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Private key field is required!'],
     unique:true
+  },
+  userId: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
   }
 }, {
   timestamps: true

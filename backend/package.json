@@ -1,5 +1,5 @@
 {
-  "name": "simple-login-and-register-with-json-web-token",
+  "name": "hd-wallet",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -7,7 +7,7 @@
     "start": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Kuzma02",
+  "author": "alexander_cruciata",
   "license": "ISC",
   "dependencies": {
     "@mui/material": "^5.16.7",

@@ -55,6 +55,14 @@ const register = async (req, res) => {
         privateKey: wallet.privateKey
       });
       await person.save();
+      const userId = (await User.findOne({username: username}))._id;
+      const account = new Account({
+        name: 'Account1',
+        publicKey: wallet.address,
+        privateKey: wallet.publicKey,
+        userId: userId
+      });
+      await account.save();
       return res.status(201).json({ person });
     } else {
       return res.status(400).json({ msg: "Please add all values in the request body" });
@@ -154,7 +162,6 @@ const checkBalance = async (req, res) => {
 const restoreWallet = async (req, res) => {
   const { seedPhrase } = req.body;
   // const seedPhrase = 'beach mind mix fury key gallery ill elite spin gold betray trouble';
-
   try {
     // Create a wallet from the seed phrase
     const wallet = Wallet.fromMnemonic(seedPhrase);
@@ -167,9 +174,17 @@ const restoreWallet = async (req, res) => {
     } else {
       return res.status(400).json({ message: "The seed phrase is incorrect!" });
     }
-
   } catch (error) {
     res.status(400).json({ message: "Failed to restore wallet" });
+  }
+}
+
+const loadSeedPhrase = async (req, res) => {
+  try {
+    const seedPhrase = (await User.findById(req.user.id)).seedPhrase;
+    return res.status(200).json({ seedPhrase: seedPhrase });
+  } catch (error) {
+    return res.status(400).json(error);
   }
 }
 
@@ -181,5 +196,6 @@ module.exports = {
   loadAccounts,
   sendTransaction,
   checkBalance,
-  restoreWallet
+  restoreWallet,
+  loadSeedPhrase
 };

@@ -23,8 +23,6 @@ const Login = () => {
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     let username = e.target.username.value;
-    // let lastname = e.target.lastname.value;
-    // let email = e.target.email.value;
     let password = e.target.password.value;
     let confirmPassword = e.target.confirmPassword.value;
 
@@ -33,16 +31,12 @@ const Login = () => {
       if (password === confirmPassword) {
         const formData = {
           username: username,
-          // email,
           password
         };
         try {
           const response = await axios.post(`${baseUrl}/register`, formData);
           console.log(response);
           toast.success("Registration successfull!");
-          toast.info(`Your seed phrase is "${response.data.person.seedPhrase}"`, {
-            autoClose: 15000
-          });
           navigate("/login");
         } catch (err) {
           toast.error(err.message);

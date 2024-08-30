@@ -3,6 +3,7 @@ const User = require("../models/User");
 const Account = require("../models/Account");
 const { ethers, Wallet } = require("ethers");
 const axios = require('axios');
+// const Web3 = require('web3');
 
 const login = async (req, res) => {
   const { username, password } = req.body;
@@ -55,11 +56,11 @@ const register = async (req, res) => {
         privateKey: wallet.privateKey
       });
       await person.save();
-      const userId = (await User.findOne({username: username}))._id;
+      const userId = (await User.findOne({ username: username }))._id;
       const account = new Account({
         name: 'Account1',
         publicKey: wallet.address,
-        privateKey: wallet.publicKey,
+        privateKey: wallet.privateKey,
         userId: userId
       });
       await account.save();
@@ -115,53 +116,98 @@ const loadAccounts = async (req, res) => {
 }
 
 const sendTransaction = async (req, res) => {
-  const { fromAccount, toAccount, amount } = req.body;
-  const providerUrl = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`; // Use your own provider
-  try {
-    // Connect to an Ethereum provider
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    // Create a wallet instance
+  const { fromAccount, toAccount, amount, token } = req.body;
+  if (token === 'ethereum') {
+    const providerUrl = `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`; // Use your own provider
+    try {
+      // Connect to an Ethereum provider
+      const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+      // Create a wallet instance
+      const wallet = new ethers.Wallet(fromAccount, provider);
+      // Get the current nonce for the wallet
+      const nonce = await wallet.getTransactionCount();
+      // Create the transaction
+      const tx = {
+        to: toAccount,
+        value: ethers.utils.parseEther(amount), // Amount in Ether
+        nonce: nonce,
+        gasLimit: 21000, // Gas limit
+        gasPrice: ethers.utils.parseUnits('50', 'gwei') // Set gas price
+      };
+      // Send the transaction
+      const txResponse = await wallet.sendTransaction(tx);
+      console.log(`Transaction hash: ${txResponse.hash}`);
+      // Wait for the transaction to be confirmed
+      const receipt = await txResponse.wait();
+      console.log(`Transaction confirmed in block: ${receipt.blockNumber}`);
+    } catch (error) {
+      return res.status(400).json(error);
+    }
+  }
+
+  if (token === 'optimism') {
+    const provider = new ethers.providers.InfuraProvider('optimism', process.env.INFURA_API_KEY);
     const wallet = new ethers.Wallet(fromAccount, provider);
-    // Get the current nonce for the wallet
-    const nonce = await wallet.getTransactionCount();
-    // Create the transaction
+    
     const tx = {
-      to: toAccount,
-      value: ethers.utils.parseEther(amount), // Amount in Ether
-      nonce: nonce,
-      gasLimit: 21000, // Gas limit
-      gasPrice: ethers.utils.parseUnits('50', 'gwei') // Set gas price
+      to: toAccount, // The address you want to send ETH to
+      value: ethers.utils.parseEther(amount), // Amount of ETH to send
+      gasLimit: 200000, // Customize gas limit
+      gasPrice: ethers.utils.parseUnits('10', 'gwei'), // Set a gas price
     };
-    // Send the transaction
-    const txResponse = await wallet.sendTransaction(tx);
-    console.log(`Transaction hash: ${txResponse.hash}`);
-    // Wait for the transaction to be confirmed
-    const receipt = await txResponse.wait();
-    console.log(`Transaction confirmed in block: ${receipt.blockNumber}`);
+
+    try {
+      const transactionResponse = await wallet.sendTransaction(tx);
+
+      // Wait for the transaction to be mined
+      const receipt = await transactionResponse.wait();
+      return res.status(200).json({result: 'Transaction successful with hash:' + receipt.transactionHash})
+      // console.log('Transaction successful with hash:', receipt.transactionHash);
+    } catch (error) {
+      return res.status(400).json(error)
+    }
+  }
+}
+
+const checkBalance = async (req, res) => {
+  try {
+    // Replace with your Ethereum address
+    const address = req.body.address;
+
+    const ethProvider = new ethers.providers.InfuraProvider("mainnet", process.env.INFURA_API_KEY);
+
+    // Get Ethereum balance
+    const ethBalance = await ethProvider.getBalance(address);
+    const ethResponse = await axios.get('https://api-pub.bitfinex.com/v2/ticker/tETHUSD');
+    const ethUsd = ethResponse.data[6];
+
+    const optimismNodeUrl = 'https://mainnet.optimism.io'; // or your node provider URL
+    const provider = new ethers.providers.JsonRpcProvider(optimismNodeUrl);
+
+    const balance = await provider.getBalance(address);
+    const optBalance = ethers.utils.formatEther(balance);
+
+    const optResponse = await await axios.get('https://min-api.cryptocompare.com/data/price', {
+      params: {
+        fsym: 'OP',
+        tsyms: 'USD'
+      }
+    });
+    const optUsd = optResponse.data.USD;
+
+    return res.status(200).json({
+      ethBalance: ethers.utils.formatEther(ethBalance),
+      ethUsd: ethUsd,
+      optBalance: optBalance,
+      optUsd: optUsd
+    });
   } catch (error) {
     return res.status(400).json(error);
   }
 }
 
-const checkBalance = async (req, res) => {
-  const provider = new ethers.providers.InfuraProvider('mainnet', process.env.INFURA_API_KEY);
-  try {
-    const balance = await provider.getBalance(req.body.address);
-    const balanceInEth = ethers.utils.formatEther(balance);
-    const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-    const price = response.data.ethereum.usd;
-    res.status(200).json({
-      balance: balanceInEth,
-      usd: price * parseFloat(balanceInEth)
-    });
-  } catch (error) {
-    res.status(500).json(error);
-  }
-}
-
 const restoreWallet = async (req, res) => {
   const { seedPhrase } = req.body;
-  // const seedPhrase = 'beach mind mix fury key gallery ill elite spin gold betray trouble';
   try {
     // Create a wallet from the seed phrase
     const wallet = Wallet.fromMnemonic(seedPhrase);

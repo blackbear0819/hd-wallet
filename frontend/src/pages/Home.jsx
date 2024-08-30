@@ -32,9 +32,10 @@ const Home = () => {
     amount: 0
   });
   const [isSending, setIsSending] = useState(false);
-  const [balance, setBalance] = useState('0.0');
+  const [balanceInfo, setBalanceInfo] = useState({});
+  // const [balance, setBalance] = useState('0.0');
+  // const [usd, setUsd] = useState(0);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
-  const [usd, setUsd] = useState(0);
   const [username, setUsername] = useState("");
   const [key, setKey] = useState("");
 
@@ -59,17 +60,17 @@ const Home = () => {
     loadAccounts();
   }, []);
   useEffect(() => {
-    setIsLoadingBalance(true);
-    axios.post(`${baseUrl}/balance`, {
-      address: account.publicKey
-    }).then(response => {
-      setBalance(response.data.balance);
-      setUsd(response.data.usd);
-      setIsLoadingBalance(false);
-    }).catch(error => {
-      setBalance('0.0');
-      setIsLoadingBalance(false);
-    });
+    if (Object.keys(account).length) {
+      setIsLoadingBalance(true);
+      axios.post(`${baseUrl}/balance`, {
+        address: account.publicKey
+      }).then(response => {
+        setBalanceInfo(response.data);
+        setIsLoadingBalance(false);
+      }).catch(error => {
+        setIsLoadingBalance(false);
+      });
+    }
   }, [account]);
 
   const loadAccounts = useCallback(async () => {
@@ -144,10 +145,10 @@ const Home = () => {
       <Navbar expand="lg" className="bg-body-tertiary" bg="dark" data-bs-theme="dark">
         <Container className='my-2'>
           <Navbar.Brand className='w-25'>
-            {/* <Button variant='dark' onClick={showNetworkModal} className='d-flex'>
+            {/*<Button variant='dark' onClick={showNetworkModal} className='d-flex'>
               <span>Ethereum Mainnet</span>
               <FaSortDown />
-            </Button> */}
+            </Button>*/}
             <Link to={'#'} className='text-decoration-none'>
               <h1 className='my-0'>HD Wallet</h1>
             </Link>
@@ -176,8 +177,11 @@ const Home = () => {
         {!isLoadingBalance ?
           (Object.keys(account).length
             ? <>
-              <h1 className='text-center mt-5 display-3 text-secondary'>{balance} ETH</h1>
-              <h3 className='text-center mb-5 text-secondary'>${usd} USD</h3>
+              <h1 className='text-center mt-5 display-3 text-secondary'>{balanceInfo.ethBalance} Ethereum</h1>
+              <h3 className='text-center mb-5 text-secondary'>${balanceInfo.ethBalance * balanceInfo.ethUsd} USD (1 ETH = ${balanceInfo.ethUsd} USD)</h3>
+
+              <h1 className='text-center mt-5 display-3 text-secondary'>{balanceInfo.optBalance} Optimism</h1>
+              <h3 className='text-center mb-5 text-secondary'>${balanceInfo.optBalance * balanceInfo.optUsd} USD (1 OPT = ${balanceInfo.optUsd} USD)</h3>
             </>
             : <h1 className='text-center mt-5 display-3 text-secondary'>No account selected!</h1>
           )
@@ -220,8 +224,8 @@ const Home = () => {
             <Form.Select aria-label="token" value={sendingData.token}
               onChange={e => setSendingData({ ...sendingData, token: e.target.value })}>
               <option value="">Select asset to send</option>
-              <option value="token1">token1</option>
-              <option value="token2">token2</option>
+              <option value="ethereum">ethereum</option>
+              <option value="optimism">optimism</option>
             </Form.Select>
           </FloatingLabel>
           <FloatingLabel controlId="amount" label="Amount">

